@@ -76,3 +76,67 @@ locals {
   }
 }
 ```
+### Задание 3
+#### 3.1
+```terraform
+resource "yandex_compute_disk" "hdd" {
+  count = 3
+  name  = "hdd-${count.index}"
+  type       = "network-hdd"
+  size       = 1
+}
+```
+#### 3.2
+```terraform
+resource "yandex_compute_instance" "storage" {
+  depends_on = [yandex_compute_disk.hdd]
+  name        = "storage"
+
+  dynamic "secondary_disk" {
+    for_each = yandex_compute_disk.hdd
+    content {
+      disk_id = secondary_disk.value.id
+    }
+  ...
+```
+![alt_text](images/03.png)
+### Задание 4
+#### 4.1 Использование  templatefile
+```terraform
+resource "local_file" "hosts_templatefile" {
+  content = templatefile(
+    "${path.module}/hosts.tftpl",
+    {
+      webservers = yandex_compute_instance.web,
+      databases  = yandex_compute_instance.db,
+      storage    = [yandex_compute_instance.storage]
+    }
+  )
+  filename = "${abspath(path.module)}/hosts.ini"
+}
+```
+#### 4.2, 4.3 Inventory template
+```terraform
+[webservers]
+
+%{~ for i in webservers ~}
+${i["name"]}   ansible_host=${i["network_interface"][0]["nat_ip_address"]}  fqdn=${i["fqdn"]}
+
+%{~ endfor ~}
+
+[databases]
+
+%{~ for i in databases ~}
+${i["name"]}   ansible_host=${i["network_interface"][0]["nat_ip_address"]}  fqdn=${i["fqdn"]}
+
+%{~ endfor ~}
+
+[storage]
+
+%{~ for i in storage ~}
+${i["name"]}   ansible_host=${i["network_interface"][0]["nat_ip_address"]} fqdn=${i.fqdn}
+
+%{~ endfor ~}
+```
+Результат
+![alt_text](images/04.png)
