@@ -30,3 +30,44 @@ variable "vpc_name" {
   default     = "develop"
   description = "VPC network&subnet name"
 }
+
+variable "vm_family" {
+  type = string
+  default ="ubuntu-2004-lts"
+}
+
+variable "vm_platform" {
+  type = string
+  default = "standard-v1"
+}
+
+### common vars
+variable "vms_resources" {
+  default = {
+    web={
+      cores=2
+      memory=1
+      core_fraction=5
+    },
+    db= {
+      cores=2
+      memory=2
+      core_fraction=20
+    }
+  }
+}
+
+variable "vm_preemptible" {
+  type = bool
+  default = true
+}
+
+variable "vm_nat" {
+  type = bool
+  default = true
+}
+
+variable "ssh_key_path" {
+  type=string
+  default = "~/.ssh/id_ed25519.pub"
+}
